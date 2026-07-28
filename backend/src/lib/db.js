@@ -7,9 +7,7 @@ const getMongoDnsServers = () => {
         .map((server) => server.trim())
         .filter(Boolean);
 
-    if (configuredServers?.length) {
-        return configuredServers;
-    }
+    if (configuredServers?.length) return configuredServers;
 
     const currentServers = dns.getServers();
     const usesLocalDnsProxy = currentServers.some((server) =>
@@ -20,10 +18,12 @@ const getMongoDnsServers = () => {
 };
 
 const connectDB = async () => {
-    try{
+    try {
         if (!process.env.MONGO_URI) {
             throw new Error("MONGO_URI is missing in .env");
         }
+
+        console.log("Connecting to MongoDB...");
 
         if (process.env.MONGO_URI.startsWith("mongodb+srv://")) {
             const mongoDnsServers = getMongoDnsServers();
@@ -34,11 +34,16 @@ const connectDB = async () => {
             }
         }
 
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log("MongoDB connected successfully");
+        await mongoose.connect(process.env.MONGO_URI, {
+            serverSelectionTimeoutMS: 10000,
+        });
+
+        console.log("✅ MongoDB connected successfully");
     } catch (error) {
-        console.error("Error connecting to MongoDB:", error);
+        console.error("❌ Error connecting to MongoDB:");
+        console.error(error.message);
+        process.exit(1);
     }
-}
+};
 
 export default connectDB;
